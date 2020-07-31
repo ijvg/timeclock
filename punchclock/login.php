@@ -37,15 +37,13 @@ if (!$empfullname)
     $empfullname = $emp; // from url or form entry
 
 if ($empfullname) {
-    $empfullname = lookup_employee($db,$db_prefix,$empfullname);
-    //print_r($empfullname);
+    $empfullname = lookup_employee($empfullname);
     if (!$empfullname) {
         $error_msg .= "Name was not recognized. Please re-enter your name.\n";
     }
 }
 
 ////////////////////////////////////////
-if(is_array($empfullname)){$empfullname=$empfullname['empfullname'];}
 if (!$empfullname) {
     unset($_SESSION['authenticated']);
 
@@ -105,7 +103,7 @@ End_Of_HTML;
 ////////////////////////////////////////
 if ($use_passwd == 'yes') {
     $authenticated = isset($_SESSION['authenticated']) ? ($_SESSION['authenticated'] == $empfullname) : false;
-//print_r($authenticated);exit;
+
     if ((!$authenticated) && (isset($_SESSION['time_admin_valid_user']) || isset($_SESSION['valid_user']))) {
         // Allow time administrators and system administrators to bypass the password screen.
         $_SESSION['authenticated'] = $empfullname;
@@ -115,15 +113,8 @@ if ($use_passwd == 'yes') {
     if (!$authenticated && $password) {
 
         // Validate password
-        if (is_valid_password($db,$db_prefix,$empfullname, $password)) {
-          //print_r($password);exit;
-          if(is_array($empfullname)){
-              $_SESSION['authenticated'] = $empfullname['empfullname'];
-          }else{
-              $_SESSION['authenticated'] = $empfullname;
-          }
-
-          //  print_r($_SESSION['authenticated']);exit;
+        if (is_valid_password($empfullname, $password)) {
+            $_SESSION['authenticated'] = $empfullname;
             $authenticated = true;
         } else {
             $error_msg .= "Password is incorrect. Please try again.\n";
@@ -131,18 +122,9 @@ if ($use_passwd == 'yes') {
     }
 
     if (!$authenticated) {
-      //print_r($empfullname);exit;
-    $u_empfullname="";
-    $h_empfullname="";
-    if(is_array($empfullname)){
-      $u_empfullname = rawurlencode($empfullname['empfullname']);
-      $h_empfullname = htmlentities($empfullname['empfullname']);
-    }else{
-      $u_empfullname = rawurlencode($empfullname);
-      $h_empfullname = htmlentities($empfullname);
-    }
-
-        $h_name_header = $show_display_name == 'yes' ? htmlentities(get_employee_name($db,$db_prefix,$empfullname)) : $h_empfullname;
+        $u_empfullname = rawurlencode($empfullname);
+        $h_empfullname = htmlentities($empfullname);
+        $h_name_header = $show_display_name == 'yes' ? htmlentities(get_employee_name($empfullname)) : $h_empfullname;
 
         // Security: make sure no one is already authenticated before displaying password screen.
         unset($_SESSION['authenticated']);
@@ -193,10 +175,7 @@ End_Of_HTML;
 ////////////////////////////////////////
 // Successful login
 $_SESSION['authenticated'] = $empfullname;
-
-$return_url= strtok($return_url, '?');
-//$return_url = preg_replace('/\bemp(fullname)?=.*?&(.*)$/', '$2', $return_url); // remove possible emp= from url
+$return_url = preg_replace('/\bemp(fullname)?=.*?&(.*)$/', '$2', $return_url); // remove possible emp= from url
 $return_url .= (preg_match('/[?]/', $return_url) ? '&' : '?') . "emp=" . rawurlencode($empfullname); // add emp= argument to url
- //print_r($return_url);exit;
 exit_next($return_url);
 ?>
